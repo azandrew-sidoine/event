@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace League\Event;
+namespace League\Event\Tests\Stubs;
 
 use Psr\EventDispatcher\StoppableEventInterface;
 

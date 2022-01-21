@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace League\Event;
+namespace League\Event\Tests\Stubs;
+
+use League\Event\Listener;
 
 class ListenerSpy implements Listener
 {

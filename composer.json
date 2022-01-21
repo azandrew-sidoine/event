@@ -18,7 +18,7 @@
         "psr/event-dispatcher": "^1.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^8.5",
+        "phpunit/phpunit": "^9.5",
         "phpstan/phpstan": "^0.12.45",
         "friendsofphp/php-cs-fixer": "^2.16"
     },
@@ -28,6 +28,11 @@
     "autoload": {
         "psr-4": {
             "League\\Event\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "League\\Event\\Tests\\": "tests/"
         }
     },
     "extra": {

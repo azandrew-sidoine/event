@@ -2,8 +2,16 @@
 
 declare(strict_types=1);
 
-namespace League\Event;
+namespace League\Event\Tests;
 
+use League\Event\BufferedEventDispatcher;
+use League\Event\EventDispatcher;
+use League\Event\Listener;
+use League\Event\ListenerRegistry;
+use League\Event\ListenerSubscriber;
+use League\Event\Tests\Stubs\ListenerSpy;
+use League\Event\Tests\Stubs\StubNamedEvent;
+use League\Event\UnableToSubscribeListener;
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use stdClass;
@@ -13,11 +21,15 @@ class BufferedEventDispatcherTest extends TestCase
     /**
      * @test
      * @dataProvider dpScenariosWhereSubscribingIsTried
+     * @covers \League\Event\BufferedEventDispatcher::subscribeTo
+     * @covers \League\Event\BufferedEventDispatcher::subscribeOnceTo
+     * @covers \League\Event\BufferedEventDispatcher::subscribeListenersFrom
      */
     public function subscribing_does_not_work_when_the_underlying_dispatcher_does_not_allow_subscribing(
         callable $scenario
     ): void {
-        $internalDispatcher = new class() implements EventDispatcherInterface {
+        $internalDispatcher = new class() implements EventDispatcherInterface
+        {
             public function dispatch(object $event): object
             {
                 return $event;
@@ -55,7 +67,8 @@ class BufferedEventDispatcherTest extends TestCase
         yield "subscribing from subscriber" => [
             function (ListenerRegistry $dispatcher) use ($listener3) {
                 $dispatcher->subscribeListenersFrom(
-                    new class($listener3) implements ListenerSubscriber {
+                    new class($listener3) implements ListenerSubscriber
+                    {
                         /**  @var Listener */
                         private $listener;
 
@@ -78,6 +91,8 @@ class BufferedEventDispatcherTest extends TestCase
     /**
      * @test
      * @dataProvider dpScenariosWhereSubscribingIsTried
+     * @covers \League\Event\BufferedEventDispatcher::dispatch
+     * @covers \League\Event\BufferedEventDispatcher::dispatchBufferedEvents
      */
     public function subscribing_with_the_dispatcher(callable $scenario, ListenerSpy $listener): void
     {
@@ -101,6 +116,7 @@ class BufferedEventDispatcherTest extends TestCase
 
     /**
      * @test
+     * @covers \League\Event\BufferedEventDispatcher::dispatchBufferedEvents
      */
     public function dispatching_buffered_events_returns_the_events_in_the_order_of_dispatching(): void
     {

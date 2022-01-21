@@ -2,9 +2,19 @@
 
 declare(strict_types=1);
 
-namespace League\Event;
+namespace League\Event\Tests;
 
-use PHPUnit\Framework\TestCase;
+use League\Event\EventDispatcher;
+use League\Event\EventGenerator;
+use League\Event\EventGeneratorBehavior;
+use League\Event\ListenerRegistry;
+use League\Event\ListenerSubscriber;
+use League\Event\PrioritizedListenerRegistry;
+use League\Event\Tests\Stubs\ListenerSpy;
+use League\Event\Tests\Stubs\StubMutableEvent;
+use League\Event\Tests\Stubs\StubNamedEvent;
+use League\Event\Tests\Stubs\StubStoppableEvent;
+use League\Event\UnableToSubscribeListener;
 use Psr\EventDispatcher\ListenerProviderInterface;
 use stdClass;
 
@@ -12,6 +22,7 @@ class EventDispatcherTest extends TestCase
 {
     /**
      * @test
+     * @covers \League\Event\EventDispatcher::wasCalledWith
      */
     public function listening_to_a_plain_object_event(): void
     {
@@ -27,6 +38,7 @@ class EventDispatcherTest extends TestCase
 
     /**
      * @test
+     * @covers \League\Event\EventDispatcher::dispatch
      */
     public function dispatching_returns_the_event_object(): void
     {
@@ -40,6 +52,8 @@ class EventDispatcherTest extends TestCase
 
     /**
      * @test
+     * @covers \League\Event\EventDispatcher::subscribeTo
+     * @covers \League\Event\EventDispatcher::dispatch
      */
     public function listening_to_a_named_event(): void
     {
@@ -55,6 +69,8 @@ class EventDispatcherTest extends TestCase
 
     /**
      * @test
+     * @covers \League\Event\EventDispatcher::subscribeTo
+     * @covers \League\Event\EventDispatcher::dispatch
      */
     public function listening_to_a_named_event_ignores_other_names(): void
     {
@@ -69,6 +85,8 @@ class EventDispatcherTest extends TestCase
 
     /**
      * @test
+     * @covers \League\Event\EventDispatcher::__construct
+     * @covers \League\Event\EventDispatcher::subscribeTo
      */
     public function it_uses_a_provided_listener_provider(): void
     {
@@ -85,6 +103,8 @@ class EventDispatcherTest extends TestCase
 
     /**
      * @test
+     * @covers \League\Event\EventDispatcher::subscribeTo
+     * @covers \League\Event\EventDispatcher::dispatch
      */
     public function it_only_keeps_notifying_handlers_when_the_event_propagation_is_not_stopped(): void
     {
@@ -106,6 +126,7 @@ class EventDispatcherTest extends TestCase
 
     /**
      * @test
+     * @covers \League\Event\EventDispatcher::subscribeOnceTo
      */
     public function it_calls_one_time_listeners_one_time(): void
     {
@@ -127,11 +148,13 @@ class EventDispatcherTest extends TestCase
     /**
      * @test
      * @dataProvider dpScenariosCausingSubscribingFailure
+     * @covers \League\Event\UnableToSubscribeListener
      */
     public function subscribing_does_not_work_when_the_underlying_provider_does_not_allow_subscribing(
         callable $scenario
     ): void {
-        $provider = new class() implements ListenerProviderInterface {
+        $provider = new class() implements ListenerProviderInterface
+        {
             public function getListenersForEvent(object $event): iterable
             {
                 return [];
@@ -171,7 +194,8 @@ class EventDispatcherTest extends TestCase
         yield "subscribing from subscriber" => [
             function (EventDispatcher $dispatcher) {
                 $dispatcher->subscribeListenersFrom(
-                    new class() implements ListenerSubscriber {
+                    new class() implements ListenerSubscriber
+                    {
                         public function subscribeListeners(ListenerRegistry $acceptor): void
                         {
                         }
@@ -183,6 +207,7 @@ class EventDispatcherTest extends TestCase
 
     /**
      * @test
+     * @covers \League\Event\PrioritizedListenerRegistry
      */
     public function listeners_are_prioritized(): void
     {
@@ -207,6 +232,8 @@ class EventDispatcherTest extends TestCase
 
     /**
      * @test
+     * @covers \League\Event\EventGenerator::recordEvent
+     * @covers \League\Event\EventGenerator::dispatchGeneratedEvents
      */
     public function events_from_an_event_generator_can_be_dispatched(): void
     {
@@ -214,7 +241,8 @@ class EventDispatcherTest extends TestCase
         $listener = new ListenerSpy();
         $dispatcher->subscribeTo(stdClass::class, $listener);
 
-        $eventGenerator = new class() implements EventGenerator {
+        $eventGenerator = new class() implements EventGenerator
+        {
             use EventGeneratorBehavior {
                 recordEvent as public;
             }
@@ -229,10 +257,12 @@ class EventDispatcherTest extends TestCase
 
     /**
      * @test
+     * @covers \League\Event\ListenerSubscriber::subscribeListenersFrom
      */
     public function listeners_can_be_subscribed_through_a_subscriber(): void
     {
-        $subscriber = new class() implements ListenerSubscriber {
+        $subscriber = new class() implements ListenerSubscriber
+        {
             public function subscribeListeners(ListenerRegistry $acceptor): void
             {
                 $acceptor->subscribeTo(
