@@ -2,6 +2,11 @@
 
 declare(strict_types=1);
 
+/*
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace League\Event;
 
 use Psr\EventDispatcher\ListenerProviderInterface;
@@ -14,7 +19,7 @@ class EventDispatcher implements EventDispatchingListenerRegistry
      */
     protected $listenerProvider;
 
-    public function __construct(ListenerProviderInterface $listenerProvider = null)
+    public function __construct(?ListenerProviderInterface $listenerProvider = null)
     {
         $this->listenerProvider = $listenerProvider instanceof ListenerProviderInterface
             ? $listenerProvider
@@ -25,9 +30,7 @@ class EventDispatcher implements EventDispatchingListenerRegistry
     {
         $listeners = $this->listenerProvider->getListenersForEvent($event);
 
-        $event instanceof StoppableEventInterface
-            ? $this->dispatchStoppableEvent($listeners, $event)
-            : $this->dispatchUnstoppableEvent($listeners, $event);
+        $this->dispatchEvent($listeners, $event);
 
         return $event;
     }
@@ -39,27 +42,9 @@ class EventDispatcher implements EventDispatchingListenerRegistry
         }
     }
 
-    private function dispatchStoppableEvent(iterable $listeners, StoppableEventInterface $event): void
-    {
-        foreach ($listeners as $listener) {
-            if ($event->isPropagationStopped()) {
-                break;
-            }
-
-            $listener($event);
-        }
-    }
-
-    private function dispatchUnstoppableEvent(iterable $listeners, object $event): void
-    {
-        foreach ($listeners as $listener) {
-            $listener($event);
-        }
-    }
-
     public function subscribeTo(string $event, callable $listener, int $priority = ListenerPriority::NORMAL): void
     {
-        if ( ! $this->listenerProvider instanceof ListenerRegistry) {
+        if (!$this->listenerProvider instanceof ListenerRegistry) {
             throw UnableToSubscribeListener::becauseTheListenerProviderDoesNotAcceptListeners($this->listenerProvider);
         }
 
@@ -68,7 +53,7 @@ class EventDispatcher implements EventDispatchingListenerRegistry
 
     public function subscribeOnceTo(string $event, callable $listener, int $priority = ListenerPriority::NORMAL): void
     {
-        if ( ! $this->listenerProvider instanceof ListenerRegistry) {
+        if (!$this->listenerProvider instanceof ListenerRegistry) {
             throw UnableToSubscribeListener::becauseTheListenerProviderDoesNotAcceptListeners($this->listenerProvider);
         }
 
@@ -77,10 +62,20 @@ class EventDispatcher implements EventDispatchingListenerRegistry
 
     public function subscribeListenersFrom(ListenerSubscriber $subscriber): void
     {
-        if ( ! $this->listenerProvider instanceof ListenerRegistry) {
+        if (!$this->listenerProvider instanceof ListenerRegistry) {
             throw UnableToSubscribeListener::becauseTheListenerProviderDoesNotAcceptListeners($this->listenerProvider);
         }
 
         $this->listenerProvider->subscribeListenersFrom($subscriber);
+    }
+
+    private function dispatchEvent(iterable $listeners, object $event): void
+    {
+        foreach ($listeners as $listener) {
+            if ($event instanceof StoppableEventInterface && $event->isPropagationStopped()) {
+                break;
+            }
+            $listener($event);
+        }
     }
 }

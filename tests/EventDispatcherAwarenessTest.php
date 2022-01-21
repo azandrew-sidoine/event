@@ -2,6 +2,11 @@
 
 declare(strict_types=1);
 
+/*
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace League\Event\Tests;
 
 use League\Event\EventDispatcher;
@@ -40,8 +45,7 @@ class EventDispatcherAwarenessTest extends TestCase
 
     private function eventDispatcherAwareInstance(): EventDispatcherAware
     {
-        return new class() implements EventDispatcherAware
-        {
+        return new class() implements EventDispatcherAware {
             use EventDispatcherAwareBehavior;
         };
     }

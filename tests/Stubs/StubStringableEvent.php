@@ -9,10 +9,10 @@ declare(strict_types=1);
 
 namespace League\Event\Tests\Stubs;
 
-use League\Event\HasEventName;
+use League\Event\StringableEvent;
 
 /** @package League\Event\Tests\Stubs */
-class StubNamedEvent implements HasEventName
+class StubStringableEvent implements StringableEvent
 {
     /**
      * @var string
@@ -24,7 +24,7 @@ class StubNamedEvent implements HasEventName
         $this->eventName = $eventName;
     }
 
-    public function eventName(): string
+    public function __toString(): string
     {
         return $this->eventName;
     }

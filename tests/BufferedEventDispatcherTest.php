@@ -2,6 +2,11 @@
 
 declare(strict_types=1);
 
+/*
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace League\Event\Tests;
 
 use League\Event\BufferedEventDispatcher;
@@ -14,7 +19,6 @@ use League\Event\Tests\Stubs\StubNamedEvent;
 use League\Event\UnableToSubscribeListener;
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
-use stdClass;
 
 class BufferedEventDispatcherTest extends TestCase
 {
@@ -28,8 +32,7 @@ class BufferedEventDispatcherTest extends TestCase
     public function subscribing_does_not_work_when_the_underlying_dispatcher_does_not_allow_subscribing(
         callable $scenario
     ): void {
-        $internalDispatcher = new class() implements EventDispatcherInterface
-        {
+        $internalDispatcher = new class() implements EventDispatcherInterface {
             public function dispatch(object $event): object
             {
                 return $event;
@@ -50,26 +53,25 @@ class BufferedEventDispatcherTest extends TestCase
         $listener2 = new ListenerSpy();
         $listener3 = new ListenerSpy();
 
-        yield "subscribing" => [
-            function (ListenerRegistry $dispatcher) use ($listener1) {
+        yield 'subscribing' => [
+            static function (ListenerRegistry $dispatcher) use ($listener1) {
                 $dispatcher->subscribeTo('event', $listener1);
             },
             $listener1,
         ];
 
-        yield "subscribing once" => [
-            function (ListenerRegistry $dispatcher) use ($listener2) {
+        yield 'subscribing once' => [
+            static function (ListenerRegistry $dispatcher) use ($listener2) {
                 $dispatcher->subscribeOnceTo('event', $listener2);
             },
             $listener2,
         ];
 
-        yield "subscribing from subscriber" => [
+        yield 'subscribing from subscriber' => [
             function (ListenerRegistry $dispatcher) use ($listener3) {
                 $dispatcher->subscribeListenersFrom(
-                    new class($listener3) implements ListenerSubscriber
-                    {
-                        /**  @var Listener */
+                    new class($listener3) implements ListenerSubscriber {
+                        /** @var Listener */
                         private $listener;
 
                         public function __construct(Listener $listener)
@@ -102,16 +104,16 @@ class BufferedEventDispatcherTest extends TestCase
         $dispatcher->dispatch($event = new StubNamedEvent('event'));
 
         // Assert dispatching is not done yet
-        $this->assertEquals(0, $listener->numberOfTimeCalled());
+        $this->assertSame(0, $listener->numberOfTimeCalled());
 
         // Triggering a dispatch
         $dispatcher->dispatchBufferedEvents();
 
-        $this->assertEquals(1, $listener->numberOfTimeCalled());
+        $this->assertSame(1, $listener->numberOfTimeCalled());
 
         $dispatcher->dispatchBufferedEvents();
 
-        $this->assertEquals(1, $listener->numberOfTimeCalled());
+        $this->assertSame(1, $listener->numberOfTimeCalled());
     }
 
     /**
@@ -121,15 +123,15 @@ class BufferedEventDispatcherTest extends TestCase
     public function dispatching_buffered_events_returns_the_events_in_the_order_of_dispatching(): void
     {
         $dispatcher = new BufferedEventDispatcher(new EventDispatcher());
-        $dispatcher->dispatch($first = new stdClass());
-        $dispatcher->dispatch($second = new stdClass());
-        $dispatcher->dispatch($third = new stdClass());
+        $dispatcher->dispatch($first = new \stdClass());
+        $dispatcher->dispatch($second = new \stdClass());
+        $dispatcher->dispatch($third = new \stdClass());
 
         $dispatchedEvents = $dispatcher->dispatchBufferedEvents();
 
         $this->assertIsArray($dispatchedEvents);
         $this->assertCount(3, $dispatchedEvents);
-        $this->assertContainsOnlyInstancesOf(stdClass::class, $dispatchedEvents);
+        $this->assertContainsOnlyInstancesOf(\stdClass::class, $dispatchedEvents);
         $this->assertSame($first, $dispatchedEvents[0]);
         $this->assertSame($second, $dispatchedEvents[1]);
         $this->assertSame($third, $dispatchedEvents[2]);

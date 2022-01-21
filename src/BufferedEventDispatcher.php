@@ -2,11 +2,16 @@
 
 declare(strict_types=1);
 
+/*
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace League\Event;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
 
-class BufferedEventDispatcher implements EventDispatcherInterface, ListenerRegistry
+class BufferedEventDispatcher implements EventDispatchingListenerRegistry
 {
     use EventGeneratorBehavior {
         recordEvent as protected;
@@ -35,18 +40,18 @@ class BufferedEventDispatcher implements EventDispatcherInterface, ListenerRegis
      */
     public function dispatchBufferedEvents(): array
     {
-        $events = [];
-
-        foreach ($this->releaseEvents() as $event) {
-            $events[] = $this->dispatcher->dispatch($event);
-        }
-
-        return $events;
+        return iterator_to_array(
+            (function () {
+                foreach ($this->releaseEvents() as $event) {
+                    yield $this->dispatcher->dispatch($event);
+                }
+            })()
+        );
     }
 
     public function subscribeTo(string $event, callable $listener, int $priority = ListenerPriority::NORMAL): void
     {
-        if ( ! $this->dispatcher instanceof ListenerRegistry) {
+        if (!$this->dispatcher instanceof ListenerRegistry) {
             throw UnableToSubscribeListener::becauseTheEventDispatcherDoesNotAcceptListeners($this->dispatcher);
         }
 
@@ -55,7 +60,7 @@ class BufferedEventDispatcher implements EventDispatcherInterface, ListenerRegis
 
     public function subscribeOnceTo(string $event, callable $listener, int $priority = ListenerPriority::NORMAL): void
     {
-        if ( ! $this->dispatcher instanceof ListenerRegistry) {
+        if (!$this->dispatcher instanceof ListenerRegistry) {
             throw UnableToSubscribeListener::becauseTheEventDispatcherDoesNotAcceptListeners($this->dispatcher);
         }
 
@@ -64,7 +69,7 @@ class BufferedEventDispatcher implements EventDispatcherInterface, ListenerRegis
 
     public function subscribeListenersFrom(ListenerSubscriber $subscriber): void
     {
-        if ( ! $this->dispatcher instanceof ListenerRegistry) {
+        if (!$this->dispatcher instanceof ListenerRegistry) {
             throw UnableToSubscribeListener::becauseTheEventDispatcherDoesNotAcceptListeners($this->dispatcher);
         }
 

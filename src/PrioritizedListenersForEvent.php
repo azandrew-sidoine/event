@@ -2,22 +2,37 @@
 
 declare(strict_types=1);
 
-namespace League\Event;
+/*
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-use const SORT_NUMERIC;
+namespace League\Event;
 
 /**
  * @internal
  */
 class PrioritizedListenersForEvent
 {
-    /** @var array<int, array<int,callable>> */
+    /**
+     *  @var array<int, array<int,callable>> 
+     */
     private $listeners = [];
-    /** @var array<int,callable> */
+
+    /** 
+     * @var array<int,callable> 
+     */
     private $sortedListeners = [];
-    /** @var bool */
+
+    /** 
+     * @var bool 
+     */
     private $isSorted = false;
-    /** @var bool */
+
+
+    /**
+     *  @var bool 
+     */
     private $containsOneTimeListener = false;
 
     public function addListener(callable $listener, int $priority): void
@@ -32,7 +47,7 @@ class PrioritizedListenersForEvent
 
     public function getListeners(): iterable
     {
-        if ($this->isSorted === false) {
+        if (false === $this->isSorted) {
             $this->sortListeners();
         }
 
@@ -48,19 +63,23 @@ class PrioritizedListenersForEvent
     private function sortListeners(): void
     {
         $this->isSorted = true;
-        krsort($this->listeners, SORT_NUMERIC);
+        krsort($this->listeners, \SORT_NUMERIC);
 
-        foreach ($this->listeners as $group) {
-            foreach ($group as $listener) {
-                $this->sortedListeners[] = $listener;
-            }
-        }
+        $this->sortedListeners = iterator_to_array(
+            (function () {
+                foreach ($this->listeners as $group) {
+                    foreach ($group as $listener) {
+                        yield $listener;
+                    }
+                }
+            })()
+        );
     }
 
     private function removeOneTimeListeners(): void
     {
         $filter = static function ($listener): bool {
-            return $listener instanceof OneTimeListener === false;
+            return false === $listener instanceof OneTimeListener;
         };
 
         $this->sortedListeners = array_filter($this->sortedListeners, $filter);

@@ -2,6 +2,11 @@
 
 declare(strict_types=1);
 
+/*
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace League\Event\Tests;
 
 use League\Event\EventDispatcher;
@@ -14,9 +19,9 @@ use League\Event\Tests\Stubs\ListenerSpy;
 use League\Event\Tests\Stubs\StubMutableEvent;
 use League\Event\Tests\Stubs\StubNamedEvent;
 use League\Event\Tests\Stubs\StubStoppableEvent;
+use League\Event\Tests\Stubs\StubStringableEvent;
 use League\Event\UnableToSubscribeListener;
 use Psr\EventDispatcher\ListenerProviderInterface;
-use stdClass;
 
 class EventDispatcherTest extends TestCase
 {
@@ -28,9 +33,9 @@ class EventDispatcherTest extends TestCase
     {
         $dispatcher = new EventDispatcher();
         $listenerSpy = new ListenerSpy();
-        $event = new stdClass;
+        $event = new \stdClass();
 
-        $dispatcher->subscribeTo(stdClass::class, $listenerSpy);
+        $dispatcher->subscribeTo(\stdClass::class, $listenerSpy);
         $dispatcher->dispatch($event);
 
         $this->assertTrue($listenerSpy->wasCalledWith($event));
@@ -42,8 +47,8 @@ class EventDispatcherTest extends TestCase
      */
     public function dispatching_returns_the_event_object(): void
     {
-        $event = new stdClass();
-        $dispatcher = new  EventDispatcher();
+        $event = new \stdClass();
+        $dispatcher = new EventDispatcher();
 
         $returnedEvent = $dispatcher->dispatch($event);
 
@@ -52,14 +57,29 @@ class EventDispatcherTest extends TestCase
 
     /**
      * @test
-     * @covers \League\Event\EventDispatcher::subscribeTo
-     * @covers \League\Event\EventDispatcher::dispatch
+     * @covers \League\Event\HasEventName
      */
     public function listening_to_a_named_event(): void
     {
         $dispatcher = new EventDispatcher();
         $listenerSpy = new ListenerSpy();
         $event = new StubNamedEvent('event.name');
+
+        $dispatcher->subscribeTo('event.name', $listenerSpy);
+        $dispatcher->dispatch($event);
+
+        $this->assertTrue($listenerSpy->wasCalledWith($event));
+    }
+
+    /**
+     * @test
+     * @covers \League\Event\StringableEvent
+     */
+    public function listening_to_a_stringable_event(): void
+    {
+        $dispatcher = new EventDispatcher();
+        $listenerSpy = new ListenerSpy();
+        $event = new StubStringableEvent('event.name');
 
         $dispatcher->subscribeTo('event.name', $listenerSpy);
         $dispatcher->dispatch($event);
@@ -80,7 +100,7 @@ class EventDispatcherTest extends TestCase
         $dispatcher->dispatch(new StubNamedEvent('event.name'));
         $dispatcher->dispatch(new StubNamedEvent('other.event.name'));
 
-        $this->assertEquals(1, $listenerSpy->numberOfTimeCalled());
+        $this->assertSame(1, $listenerSpy->numberOfTimeCalled());
     }
 
     /**
@@ -92,9 +112,9 @@ class EventDispatcherTest extends TestCase
     {
         $listenerSpy = new ListenerSpy();
         $provider = new PrioritizedListenerRegistry();
-        $provider->subscribeTo(stdClass::class, $listenerSpy);
+        $provider->subscribeTo(\stdClass::class, $listenerSpy);
         $dispatcher = new EventDispatcher($provider);
-        $event = new stdClass();
+        $event = new \stdClass();
 
         $dispatcher->dispatch($event);
 
@@ -114,7 +134,7 @@ class EventDispatcherTest extends TestCase
 
         $dispatcher->subscribeTo(
             StubStoppableEvent::class,
-            function (StubStoppableEvent $event) {
+            static function (StubStoppableEvent $event) {
                 $event->stopPropagation();
             }
         );
@@ -134,15 +154,15 @@ class EventDispatcherTest extends TestCase
         $oneTimeListener = new ListenerSpy();
 
         $dispatcher = new EventDispatcher();
-        $dispatcher->subscribeTo(stdClass::class, $normalListener);
-        $dispatcher->subscribeOnceTo(stdClass::class, $oneTimeListener);
+        $dispatcher->subscribeTo(\stdClass::class, $normalListener);
+        $dispatcher->subscribeOnceTo(\stdClass::class, $oneTimeListener);
 
-        $dispatcher->dispatch(new stdClass());
-        $dispatcher->dispatch(new stdClass());
-        $dispatcher->dispatch(new stdClass());
+        $dispatcher->dispatch(new \stdClass());
+        $dispatcher->dispatch(new \stdClass());
+        $dispatcher->dispatch(new \stdClass());
 
-        $this->assertEquals(1, $oneTimeListener->numberOfTimeCalled());
-        $this->assertEquals(3, $normalListener->numberOfTimeCalled());
+        $this->assertSame(1, $oneTimeListener->numberOfTimeCalled());
+        $this->assertSame(3, $normalListener->numberOfTimeCalled());
     }
 
     /**
@@ -153,8 +173,7 @@ class EventDispatcherTest extends TestCase
     public function subscribing_does_not_work_when_the_underlying_provider_does_not_allow_subscribing(
         callable $scenario
     ): void {
-        $provider = new class() implements ListenerProviderInterface
-        {
+        $provider = new class() implements ListenerProviderInterface {
             public function getListenersForEvent(object $event): iterable
             {
                 return [];
@@ -171,31 +190,30 @@ class EventDispatcherTest extends TestCase
 
     public function dpScenariosCausingSubscribingFailure(): iterable
     {
-        yield "subscribing" => [
-            function (EventDispatcher $dispatcher) {
+        yield 'subscribing' => [
+            static function (EventDispatcher $dispatcher) {
                 $dispatcher->subscribeTo(
                     'event',
-                    function () {
+                    static function () {
                     }
                 );
             },
         ];
 
-        yield "subscribing once" => [
-            function (EventDispatcher $dispatcher) {
+        yield 'subscribing once' => [
+            static function (EventDispatcher $dispatcher) {
                 $dispatcher->subscribeOnceTo(
                     'event',
-                    function () {
+                    static function () {
                     }
                 );
             },
         ];
 
-        yield "subscribing from subscriber" => [
-            function (EventDispatcher $dispatcher) {
+        yield 'subscribing from subscriber' => [
+            static function (EventDispatcher $dispatcher) {
                 $dispatcher->subscribeListenersFrom(
-                    new class() implements ListenerSubscriber
-                    {
+                    new class() implements ListenerSubscriber {
                         public function subscribeListeners(ListenerRegistry $acceptor): void
                         {
                         }
@@ -215,7 +233,7 @@ class EventDispatcherTest extends TestCase
         $event = new StubMutableEvent('Hi!');
         $append = static function (string $value) {
             return static function (StubMutableEvent $event) use ($value) {
-                $event->append(' ' . $value);
+                $event->append(' '.$value);
             };
         };
         $appendHello = $append('Hello,');
@@ -227,7 +245,7 @@ class EventDispatcherTest extends TestCase
 
         $dispatcher->dispatch($event);
 
-        $this->assertEquals('Hi! Hello, World! Good bye!', $event->value());
+        $this->assertSame('Hi! Hello, World! Good bye!', $event->value());
     }
 
     /**
@@ -239,20 +257,19 @@ class EventDispatcherTest extends TestCase
     {
         $dispatcher = new EventDispatcher();
         $listener = new ListenerSpy();
-        $dispatcher->subscribeTo(stdClass::class, $listener);
+        $dispatcher->subscribeTo(\stdClass::class, $listener);
 
-        $eventGenerator = new class() implements EventGenerator
-        {
+        $eventGenerator = new class() implements EventGenerator {
             use EventGeneratorBehavior {
                 recordEvent as public;
             }
         };
-        $eventGenerator->recordEvent(new stdClass());
-        $eventGenerator->recordEvent(new stdClass());
-        $eventGenerator->recordEvent(new stdClass());
+        $eventGenerator->recordEvent(new \stdClass());
+        $eventGenerator->recordEvent(new \stdClass());
+        $eventGenerator->recordEvent(new \stdClass());
         $dispatcher->dispatchGeneratedEvents($eventGenerator);
 
-        $this->assertEquals(3, $listener->numberOfTimeCalled());
+        $this->assertSame(3, $listener->numberOfTimeCalled());
     }
 
     /**
@@ -261,13 +278,12 @@ class EventDispatcherTest extends TestCase
      */
     public function listeners_can_be_subscribed_through_a_subscriber(): void
     {
-        $subscriber = new class() implements ListenerSubscriber
-        {
+        $subscriber = new class() implements ListenerSubscriber {
             public function subscribeListeners(ListenerRegistry $acceptor): void
             {
                 $acceptor->subscribeTo(
                     StubMutableEvent::class,
-                    function (StubMutableEvent $event) {
+                    static function (StubMutableEvent $event) {
                         $event->append(' mutated');
                     }
                 );
@@ -278,6 +294,6 @@ class EventDispatcherTest extends TestCase
         $event = new StubMutableEvent('this is');
         $dispatcher->dispatch($event);
 
-        $this->assertEquals('this is mutated', $event->value());
+        $this->assertSame('this is mutated', $event->value());
     }
 }

@@ -2,6 +2,11 @@
 
 declare(strict_types=1);
 
+/*
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace League\Event\Tests\Stubs;
 
 use League\Event\Listener;
@@ -20,7 +25,7 @@ class ListenerSpy implements Listener
 
     public function __invoke(object $event): void
     {
-        $this->timesCalled += 1;
+        ++$this->timesCalled;
         $this->calledWith = $event;
     }
 
